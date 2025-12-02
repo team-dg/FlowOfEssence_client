@@ -13,6 +13,8 @@ public class LobbyManager : MonoBehaviour
     public GameObject 친구추가Panel;
     public InputField 친구추가Input;
 
+    public GameObject 채팅Panel;
+
 
     void Start()
     {
@@ -77,6 +79,18 @@ public class LobbyManager : MonoBehaviour
         {
             친구추가Panel.SetActive(false);
             친구추가Input.text = "";
+        }
+    }
+
+    public void Open채팅Panel()
+    {
+        if(채팅Panel.activeSelf)
+        {
+            채팅Panel.SetActive(false);
+        }
+        else
+        {
+            채팅Panel.SetActive(true);
         }
     }
 }

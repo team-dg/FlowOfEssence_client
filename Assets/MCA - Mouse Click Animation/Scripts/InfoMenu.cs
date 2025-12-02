@@ -262,7 +262,7 @@ namespace mset {
 						GUI.color = new Color (1, 1, 1, 0.0f);
 
 						if (GUI.Button (texRect, infoTexture)) {
-							UnityEditorInternal.AssetStore.Open (uASLink);
+							//UnityEditorInternal.AssetStore.Open (uASLink);
 						}
 						GUI.color = tmpColor;
 					}

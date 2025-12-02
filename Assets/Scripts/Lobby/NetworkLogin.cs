@@ -18,6 +18,7 @@ public class LoginResponse
     public string profileImageUrl;
     public AccessToken accessToken;
     public RefreshToken refreshToken;
+    public string userId;
 }
 
 [System.Serializable]
@@ -128,9 +129,9 @@ public class NetworkLogin : MonoBehaviour
 
     public void UnityWebRequestPostKakaoLogin(string authorizationCode)
     {
-        string url = "http://60.253.18.199:5424/api/v1/auth/login/oauth2"; // OAuth 로그인 API URL
+        string url = "http://125.182.231.38:5424/api/v1/auth/login/oauth2"; // OAuth 로그인 API URL
         string jsonBody = $"{{\"socialType\":\"KAKAO\",\"code\":\"{authorizationCode}\"}}";
-        StartCoroutine(SendPostRequest(url, jsonBody, "POST", authorizationCode));
+        StartCoroutine(SendPostRequest(url, jsonBody, "POST", authorizationCode,false));
 
         /*UnityWebRequest www = new UnityWebRequest(url, "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonBody);
@@ -174,14 +175,17 @@ public class NetworkLogin : MonoBehaviour
         }*/
     }
 
-    public IEnumerator SendPostRequest(string url,string jsonBody,string getorpost,string authorizationCode)
+    public IEnumerator SendPostRequest(string url,string jsonBody,string getorpost,string authorizationCode, bool 회원가입여부)
     {
+        print("ascxzcxz");
         UnityWebRequest www = new UnityWebRequest(url, getorpost);
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonBody);
         www.uploadHandler = new UploadHandlerRaw(bodyRaw);
         www.downloadHandler = new DownloadHandlerBuffer();
         www.SetRequestHeader("Content-Type", "application/json");
+        print("전");
         yield return www.SendWebRequest();
+        print("후");
         if (www.result == UnityWebRequest.Result.Success)
         {
             Debug.Log("로그인 성공: " + www.downloadHandler.text);
@@ -191,6 +195,8 @@ public class NetworkLogin : MonoBehaviour
             // Access Token과 Refresh Token을 저장
             PlayerPrefs.SetString("accessToken", loginResponse.accessToken.token);
             PlayerPrefs.SetString("refreshToken", loginResponse.refreshToken.token);
+            PlayerPrefs.SetString("userId", loginResponse.userId);
+            //PlayerPrefs.SetString("nickname", loginResponse.nickname);
             PlayerPrefs.Save(); // PlayerPrefs 저장
 
             Debug.Log("Access Token 저장됨: " + loginResponse.accessToken.token);
@@ -206,11 +212,43 @@ public class NetworkLogin : MonoBehaviour
             Debug.Log($"profileImageUrl: {loginResponse.profileImageUrl}");
             //StartCoroutine(LoadProfileImage(loginResponse.profileImageUrl));
 
-
+            /*if(회원가입여부)//회원가입을 하게되면 닉네임을 다른 서버로 보낸다.
+            {
+                string url2 = "http://192.168.0.3:6008/api/v1/users";
+                string jsonBody2 = $"{{\"id\":\"{loginResponse.userId}\",\"nickname\":\"{signUpNickName.text}\",\"profileImage\":{(profileImage == null ? "null" : $"\"{profileImage}\"")}}}";
+                StartCoroutine(SendPostRequestNickName(url2, jsonBody2,"POST"));
+            }*/
             StartCoroutine(이용가채널());
         }
-    }
+        else
+        {
+            Debug.LogError($"요청 실패: {www.result}");
+            Debug.LogError($"에러 메시지: {www.error}");
+            if (www.downloadHandler != null)
+            {
+                Debug.LogError("서버 응답 본문: " + www.downloadHandler.text);
+            }
+            else
+            {
+                Debug.LogError("서버로부터 응답이 없습니다.");
+            }
 
+        }
+    }
+    IEnumerator SendPostRequestNickName(string url, string jsonBody, string getorpost)
+    {
+        UnityWebRequest www = new UnityWebRequest(url, getorpost);
+        byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonBody);
+        www.uploadHandler = new UploadHandlerRaw(bodyRaw);
+        www.downloadHandler = new DownloadHandlerBuffer();
+        www.SetRequestHeader("Content-Type", "application/json");
+        yield return www.SendWebRequest();
+        if (www.result == UnityWebRequest.Result.Success)
+        {
+            Debug.Log("닉네임 보냄");
+        }
+
+    }
     //일반 로그인, 회원가입
     public void Login()
     {
@@ -224,10 +262,10 @@ public class NetworkLogin : MonoBehaviour
 
     public void UnityWebRequestPostLogin()
     {
-        string url = "http://60.253.18.199:5424/api/v1/auth/login"; // 로그인 API URL
+        string url = "http://125.182.231.38:5424/api/v1/auth/login"; // 로그인 API URL
         string jsonBody = $"{{\"username\":\"{id.text}\",\"password\":\"{password.text}\"}}";
 
-        StartCoroutine(SendPostRequest(url, jsonBody, "POST", ""));
+        StartCoroutine(SendPostRequest(url, jsonBody, "POST", "",false));
         /*
         UnityWebRequest www = new UnityWebRequest(url, "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonBody);
@@ -269,10 +307,10 @@ public class NetworkLogin : MonoBehaviour
 
     public void UnityWebRequestPostSignup()
     {
-        string url = "http://60.253.18.199:5424/api/v1/auth/signup";
+        string url = "http://125.182.231.38:5424/api/v1/auth/signup";
         string jsonBody = $"{{\"username\":\"{newplayer.username}\",\"password\":\"{newplayer.password}\",\"email\":\"{newplayer.email}\",\"nickname\":\"{newplayer.nickname}\"}}";
 
-        StartCoroutine(SendPostRequest(url, jsonBody, "POST", ""));
+        StartCoroutine(SendPostRequest(url, jsonBody, "POST", "",true));
 
         /*UnityWebRequest www = new UnityWebRequest(url, "POST");
         byte[] bodyRaw = System.Text.Encoding.UTF8.GetBytes(jsonBody);
@@ -403,7 +441,7 @@ public class NetworkLogin : MonoBehaviour
 
 
 
-    /* public void EmailPanel()
+     public void EmailPanel()
     {
         if(idPanel.activeSelf)//만약 id패널이활성화 되어있다면
         {
@@ -418,13 +456,14 @@ public class NetworkLogin : MonoBehaviour
             newplayer.email = signUpEmail.text;
             newplayer.nickname = signUpNickName.text;
             //string jsonBody = JsonUtility.ToJson(newplayer);
-
-            StartCoroutine(UnityWebRequestPostSignup());
+            print("??");
+            
+            UnityWebRequestPostSignup();
         }
         
     }
 
-    IEnumerator UnityWebRequestGet()
+    /*IEnumerator UnityWebRequestGet()
     {
         string url = "";
         UnityWebRequest www = UnityWebRequest.Get(url);
